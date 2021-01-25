@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="532.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.iljaknk.dialog_window">
+   <children>
+      <VBox layoutX="60.0" layoutY="129.0" prefHeight="169.0" prefWidth="77.0" spacing="25.0">
+         <children>
+            <Label text="ID" />
+            <Label text="First name" />
+            <Label text="Last name" />
+            <Label text="Rank" />
+         </children>
+      </VBox>
+      <VBox layoutX="246.0" layoutY="129.0" prefHeight="169.0" prefWidth="265.0" spacing="15.0">
+         <children>
+            <TextField fx:id="textfield_ID" editable="false" promptText="Soldier id" />
+            <TextField fx:id="textfield_first_name" promptText="First name" />
+            <TextField fx:id="textfield_last_name" promptText="Last name" />
+            <TextField fx:id="textfield_Rank" promptText="Rank" />
+         </children>
+      </VBox>
+      <HBox layoutX="126.0" layoutY="414.0" spacing="10.0">
+         <children>
+            <Button fx:id="btn_Submit" mnemonicParsing="false" onAction="#handle_button_Action" prefHeight="26.0" prefWidth="169.0" text="Submit Soldier" />
+            <Button fx:id="btn_Cancel" mnemonicParsing="false" onAction="#handle_button_Action" prefWidth="170.0" text="Cancel" />
+         </children>
+      </HBox>
+   </children>
+</AnchorPane>
