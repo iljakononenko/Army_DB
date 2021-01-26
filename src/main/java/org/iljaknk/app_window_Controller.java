@@ -1,13 +1,17 @@
 package org.iljaknk;
 
+import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ResourceBundle;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
@@ -15,15 +19,12 @@ import javafx.scene.input.MouseEvent;
 import static org.iljaknk.App.*;
 
 
-public class app_window_Controller {
-
-    public static boolean edit_flag;
-    public static boolean delete_flag = false;
+public class app_window_Controller implements Initializable {
 
     public TextField textfield_ID;
     public TextField textfield_first_name;
     public TextField textfield_last_name;
-    public TextField textfield_Rank;
+    public ChoiceBox<String> choicebox_rank;
     public TableView<Soldiers> table_view;
     public TableColumn<Soldiers, Integer> column_ID;
     public TableColumn<Soldiers, String> column_first_name;
@@ -34,10 +35,12 @@ public class app_window_Controller {
     public Button btn_Delete;
     public Button btn_Update;
     public Button btn_Clear;
+    public ChoiceBox<String> type_of_table;
 
     public String id;
     public String first_name;
     public String last_name;
+    public static String rank;
 
     ResultSet resultSet = null;
 
@@ -71,10 +74,10 @@ public class app_window_Controller {
         textfield_ID.setText(String.valueOf(soldier.getId()));
         textfield_first_name.setText(soldier.getFirst_name());
         textfield_last_name.setText(soldier.getLast_name());
-        textfield_Rank.setText(soldier.getRank());
+        choicebox_rank.setValue(soldier.getRank());
     }
 
-    public ObservableList<Soldiers> get_list_of_Soldiers (String id, String first_name, String last_name)
+    public ObservableList<Soldiers> get_list_of_Soldiers ()
     {
         ObservableList<Soldiers> soldiers_list = FXCollections.observableArrayList();
 
@@ -84,18 +87,19 @@ public class app_window_Controller {
         {
             stmt = connection.prepareStatement("select list_of_soldiers.id, list_of_soldiers.first_name, list_of_soldiers.last_name, list_of_ranks.rank_title " +
             "from list_of_soldiers left join list_of_ranks on list_of_soldiers.rank_id = list_of_ranks.id where list_of_soldiers.id like ? and first_name like ? and last_name " +
-            "like ?");
+            "like ? and rank_title like ?");
 
-            stmt.setString(1, id);
-            stmt.setString(2, first_name);
-            stmt.setString(3, last_name);
+            stmt.setString(1, id + "%");
+            stmt.setString(2, first_name + "%");
+            stmt.setString(3, last_name + "%");
+            stmt.setString(4, rank + "%");
 
             resultSet = stmt.executeQuery();
             Soldiers soldier;
 
             while (resultSet.next())
             {
-                soldier = return_soldier("id", "first_name", "last_name", "rank_title");
+                soldier = return_soldier("id", "first_name", "last_name", "rank_title", "armour", "weapon");
                 soldiers_list.add(soldier);
             }
         }
@@ -107,20 +111,20 @@ public class app_window_Controller {
         return soldiers_list;
     }
 
-    public Soldiers return_soldier (String col_1, String col_2, String col_3, String col_4) throws SQLException
+    public Soldiers return_soldier (String col_1, String col_2, String col_3, String col_4, String col_5, String col_6) throws SQLException
     {
-        return new Soldiers(resultSet.getInt(col_1), resultSet.getString(col_2), resultSet.getString(col_3), resultSet.getString(col_4));
+        return new Soldiers(resultSet.getInt(col_1), resultSet.getString(col_2), resultSet.getString(col_3), resultSet.getString(col_4), resultSet.getString(col_5), resultSet.getString(col_6));
     }
 
     public void find_Records()
     {
-        get_data_from_textfields();
-        show_Soldiers(id + "%", first_name + "%", last_name + "%");
+        get_search_data();
+        show_Soldiers();
     }
 
-    public void show_Soldiers (String id, String first_name, String last_name)
+    public void show_Soldiers ()
     {
-        ObservableList<Soldiers> soldier_list = get_list_of_Soldiers(id, first_name, last_name);
+        ObservableList<Soldiers> soldier_list = get_list_of_Soldiers();
 
         column_ID.setCellValueFactory(new PropertyValueFactory<Soldiers, Integer>("id"));
         column_first_name.setCellValueFactory(new PropertyValueFactory<Soldiers, String>("first_name"));
@@ -133,28 +137,37 @@ public class app_window_Controller {
     private void add_Record()
     {
         edit_flag = false;
-        get_data_from_textfields();
-        id = String.valueOf(get_last_id());
-        dialog_window.display(id, first_name, last_name);
-        show_all_Soldiers();
-        clear_textfields();
+        get_search_data();
+
+        global_soldier_id = String.valueOf(get_last_id());
+        dialog_window.display();
+
+        end_of_changes();
     }
 
     private void edit_Record()
     {
         edit_flag = true;
-        get_data_from_textfields();
-        dialog_window.display(id, first_name, last_name);
-        show_all_Soldiers();
-        clear_textfields();
+        get_search_data();
+
+        dialog_window.display();
+
+        end_of_changes();
     }
 
     private void delete_Record ()
     {
-        get_data_from_textfields();
+        get_search_data();
         delete_confirmation.display(id, first_name, last_name);
-        show_all_Soldiers();
+
+        end_of_changes();
+    }
+
+    private void end_of_changes()
+    {
+        clear_Strings();
         clear_textfields();
+        show_Soldiers();
     }
 
     private void clear_textfields ()
@@ -162,19 +175,23 @@ public class app_window_Controller {
         textfield_ID.setText("");
         textfield_first_name.setText("");
         textfield_last_name.setText("");
-        textfield_Rank.setText("");
+        choicebox_rank.setValue("");
     }
 
-    private void show_all_Soldiers ()
+    private void clear_Strings ()
     {
-        show_Soldiers("%", "%", "%");
+        id = "";
+        first_name = "";
+        last_name = "";
+        rank = "";
     }
 
-    private void get_data_from_textfields ()
+    private void get_search_data()
     {
-        id = textfield_ID.getText();
+        global_soldier_id = textfield_ID.getText();
         first_name = textfield_first_name.getText();
         last_name = textfield_last_name.getText();
+        rank = choicebox_rank.getValue();
     }
 
     private int get_last_id ()
@@ -198,4 +215,55 @@ public class app_window_Controller {
         return new_id + 1;
     }
 
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        get_rank_options();
+        type_of_table.getItems().addAll(table_type.getItems());
+        type_of_table.getSelectionModel().selectedItemProperty().addListener( (v, oldValue, newValue) -> set_table_choicebox(newValue));
+    }
+
+    public void set_table_choicebox (String newValue)
+    {
+        try
+        {
+            switch (newValue)
+            {
+                case "Squads":
+                    window.setScene(new Scene(loadFXML("app_window_squads")));
+                    break;
+                case "Hours":
+                    window.setScene(new Scene(loadFXML("app_window_hours")));
+                    break;
+                case "Ranks":
+                    window.setScene(new Scene(loadFXML("app_window_main")));
+                    break;
+            }
+        }
+
+        catch (Exception e)
+        {
+
+        }
+    }
+
+    public void get_rank_options ()
+    {
+        String query = "select rank_title from list_of_ranks";
+
+        try
+        {
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next())
+            {
+                String rank_title = rs.getString("rank_title");
+                choicebox_rank.getItems().add(rank_title);
+            }
+            choicebox_rank.setValue("");
+        }
+        catch (SQLException e)
+        {
+            System.out.println(e);
+        }
+    }
 }
